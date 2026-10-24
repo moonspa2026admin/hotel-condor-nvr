@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control NVR - Hotel Condor Suites</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .bg-hotel-condor {
+            background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.94)), 
+                              url('Hotel Condor Suite HD 2025.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+        }
+
+        @media print {
+            body { background: white !important; color: black !important; }
+            .no-print { display: none !important; }
+            #printSection { display: block !important; position: absolute; top: 0; left: 0; width: 100%; background: white; color: black; padding: 20px; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #cbd5e1 !important; padding: 8px !important; text-align: left; font-size: 12px; color: black !important; }
+            th { background-color: #f1f5f9 !important; font-weight: bold; }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen pb-28 bg-hotel-condor font-sans">
+
+    <!-- Header con el Logo -->
+    <header class="no-print bg-slate-900/95 backdrop-blur-md border-b border-slate-700/80 sticky top-0 z-20 shadow-lg px-4 py-2.5">
+        <div class="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
+            <div class="flex items-center gap-3">
+                <div class="bg-white p-1 rounded-xl shadow-md border border-amber-400/50 flex items-center justify-center">
+                    <img src="Logo Hotel Condor2.jpg" alt="Hotel Condor Suites" class="h-10 w-auto object-contain rounded-lg">
+                </div>
+                <div>
+                    <h1 class="text-base font-black tracking-wider text-white uppercase flex items-center gap-2">
+                        HOTEL CONDOR <span class="text-amber-400 font-bold text-[10px] bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/30">SUITES</span>
+                    </h1>
+                    <p class="text-xs text-slate-400 font-medium">Control de Cámaras IP & NVRs - Lechería</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
+                <button onclick="openPrintModal()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1 shadow-lg transition">
+                    🖨️ Imprimir Listado
+                </button>
+                <button onclick="openModalForAdd()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1 shadow-lg shadow-amber-500/20 transition">
+                    ➕ Nueva Cámara
+                </button>
+                <button onclick="syncData()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-3 py-2 rounded-xl text-xs flex items-center gap-1 transition">
+                    🔄 Sincronizar
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Tarjetas de Métricas -->
+    <section class="no-print max-w-6xl mx-auto p-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="bg-slate-800/85 border border-slate-700/70 rounded-xl p-3 backdrop-blur shadow-lg">
+            <p class="text-xs text-slate-400 font-medium">NVRs del Hotel</p>
+            <p class="text-xl font-bold text-emerald-400">3 <span class="text-xs font-normal text-slate-400">(+1 Reserva)</span></p>
+        </div>
+        <div class="bg-slate-800/85 border border-slate-700/70 rounded-xl p-3 backdrop-blur shadow-lg">
+            <p class="text-xs text-slate-400 font-medium">Capacidad Total</p>
+            <p class="text-xl font-bold text-blue-400">192 <span class="text-xs font-normal text-slate-400">Canales</span></p>
+        </div>
+        <div class="bg-slate-800/85 border border-slate-700/70 rounded-xl p-3 backdrop-blur shadow-lg">
+            <p class="text-xs text-slate-400 font-medium">Cámaras Registradas</p>
+            <p id="totalRegistered" class="text-xl font-bold text-amber-400">0</p>
+        </div>
+        <div class="bg-slate-800/85 border border-slate-700/70 rounded-xl p-3 backdrop-blur shadow-lg">
+            <p class="text-xs text-slate-400 font-medium">Canales Libres</p>
+            <p id="freeChannels" class="text-xl font-bold text-purple-400">192</p>
+        </div>
+    </section>
+
+    <!-- Filtros -->
+    <section class="no-print max-w-6xl mx-auto px-4 mb-3">
+        <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-none text-xs">
+            <button onclick="filterNVR('ALL')" class="nvr-filter bg-amber-500 text-slate-950 font-bold px-3 py-1.5 rounded-lg border border-amber-400 whitespace-nowrap">Todos los NVRs</button>
+            <button onclick="filterNVR('NVR 01')" class="nvr-filter bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 whitespace-nowrap">NVR 01 (Activo)</button>
+            <button onclick="filterNVR('NVR 02')" class="nvr-filter bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 whitespace-nowrap">NVR 02 (Activo)</button>
+            <button onclick="filterNVR('NVR 03')" class="nvr-filter bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 whitespace-nowrap">NVR 03 (Activo)</button>
+            <button onclick="filterNVR('NVR 04')" class="nvr-filter bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 whitespace-nowrap">NVR 04 (Reserva Futura)</button>
+        </div>
+    </section>
+
+    <!-- Grid principal -->
+    <main class="no-print max-w-6xl mx-auto px-4">
+        <div id="cameraGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+        <div id="emptyMessage" class="hidden text-center py-12 text-slate-400 bg-slate-800/80 rounded-xl border border-slate-700">
+            <p class="text-base font-semibold">No se encontraron cámaras bajo este filtro o búsqueda.</p>
+        </div>
+    </main>
+
+    <!-- Buscador Flotante -->
+    <div class="no-print fixed bottom-4 left-1/2 -translate-x-1/2 z-30 w-11/12 max-w-lg">
+        <div class="bg-slate-800/95 backdrop-blur-lg border border-slate-600 p-2.5 rounded-2xl shadow-2xl flex items-center gap-2 ring-1 ring-white/10">
+            <span class="text-amber-400 pl-2">🔍</span>
+            <input type="text" id="searchInput" placeholder="Buscar por IP (ej. 192.168...), cámara, NVR o área..." 
+                   class="bg-transparent w-full text-sm focus:outline-none text-white placeholder-slate-400">
+            <span class="text-[10px] bg-slate-700/80 text-slate-400 px-2 py-1 rounded hidden sm:inline-block font-mono">Ctrl+K</span>
+        </div>
+    </div>
+
+    <!-- Modal Impresión -->
+    <div id="modalPrint" class="no-print fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-2xl p-5 shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-700">
+                <h3 class="text-base font-bold text-amber-400 flex items-center gap-2">🖨️ Vista Previa e Impresión</h3>
+                <button onclick="closePrintModal()" class="text-slate-400 hover:text-white text-lg font-bold">✕</button>
+            </div>
+            <div class="my-4 flex items-center justify-between gap-3 bg-slate-900 p-3 rounded-xl border border-slate-700">
+                <label class="text-xs font-semibold text-slate-300">Seleccionar NVR a Imprimir:</label>
+                <select id="selectPrintNVR" onchange="updatePrintPreview()" class="bg-slate-800 text-amber-400 font-bold border border-slate-600 rounded-lg p-2 text-xs focus:outline-none">
+                    <option value="ALL">Todos los NVRs</option>
+                    <option value="NVR 01">NVR 01 (Activo)</option>
+                    <option value="NVR 02">NVR 02 (Activo)</option>
+                    <option value="NVR 03">NVR 03 (Activo)</option>
+                    <option value="NVR 04">NVR 04 (Inactivo/Reserva)</option>
+                </select>
+            </div>
+            <div class="overflow-y-auto flex-1 bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+                <div id="modalTablePreview"></div>
+            </div>
+            <div class="flex justify-between items-center pt-4 border-t border-slate-700 mt-3">
+                <span id="printTotalCount" class="text-xs text-slate-400 font-mono">0 cámaras encontradas</span>
+                <div class="flex gap-2">
+                    <button onclick="closePrintModal()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold px-4 py-2 rounded-xl text-xs">Cancelar</button>
+                    <button onclick="executePrint()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs shadow-lg shadow-amber-500/20">🖨️ Imprimir / Guardar PDF</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sección imprimible -->
+    <div id="printSection" class="hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0f172a; padding-bottom: 10px; margin-bottom: 15px;">
+            <div>
+                <h2 style="font-size: 18px; font-weight: bold; margin: 0; color: #0f172a;">HOTEL CONDOR SUITES</h2>
+                <p style="font-size: 12px; margin: 2px 0; color: #475569;">SISTEMA DE CONTROL DE CÁMARAS IP & NVRS - LECHERÍA</p>
+                <p id="printHeaderSubtitle" style="font-size: 11px; font-weight: bold; margin-top: 5px; color: #d97706;"></p>
+            </div>
+            <div style="text-align: right; font-size: 10px; color: #64748b;">
+                <p style="margin: 0;">Fecha: <span id="printDate"></span></p>
+                <p style="margin: 2px 0;">Hotel Condor Suites Lechería</p>
+            </div>
+        </div>
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background-color: #f1f5f9;">
+                    <th style="border: 1px solid #cbd5e1; padding: 6px; text-align: left; font-size: 11px;">NVR / Canal</th>
+                    <th style="border: 1px solid #cbd5e1; padding: 6px; text-align: left; font-size: 11px;">Nombre de Cámara</th>
+                    <th style="border: 1px solid #cbd5e1; padding: 6px; text-align: left; font-size: 11px;">Dirección IP</th>
+                    <th style="border: 1px solid #cbd5e1; padding: 6px; text-align: left; font-size: 11px;">Ubicación / Área</th>
+                </tr>
+            </thead>
+            <tbody id="printTableBody"></tbody>
+        </table>
+    </div>
+
+    <!-- Modal Agregar / Modificar Cámara -->
+    <div id="modalAdd" class="no-print fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md p-5 shadow-2xl">
+            <h3 id="modalTitle" class="text-base font-bold text-amber-400 mb-3 flex items-center gap-2">📹 Registrar Nueva Cámara</h3>
+            <form id="addCameraForm" onsubmit="saveCamera(event)" class="space-y-3 text-xs">
+                <input type="hidden" id="editIndex" value="-1">
+                <div>
+                    <label class="block text-slate-400 mb-1">NVR Asignado</label>
+                    <select id="inputNVR" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white">
+                        <option value="NVR 01">NVR 01 (Activo)</option>
+                        <option value="NVR 02">NVR 02 (Activo)</option>
+                        <option value="NVR 03">NVR 03 (Activo)</option>
+                        <option value="NVR 04">NVR 04 (Inactivo/Reserva)</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-slate-400 mb-1">Canal (1 - 48)</label>
+                        <input type="text" id="inputCanal" placeholder="ej. CH 01" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">Puerto</label>
+                        <input type="text" id="inputPuerto" placeholder="ej. 8000" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white font-mono">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-slate-400 mb-1">Dirección IP</label>
+                        <input type="text" id="inputIP" placeholder="192.168.1.X" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">Estado</label>
+                        <select id="inputEstado" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white">
+                            <option value="Activa">Activa</option>
+                            <option value="Inactiva">Inactiva</option>
+                            <option value="Mantenimiento">Mantenimiento</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">Nombre / Identificador</label>
+                    <input type="text" id="inputNombre" placeholder="ej. Lobby Principal / Pasillo 100" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">Ubicación / Área</label>
+                    <input type="text" id="inputUbicacion" placeholder="ej. Mezzanina, Estacionamiento VIP" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">Observaciones</label>
+                    <input type="text" id="inputObs" placeholder="Opcional" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white">
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="closeModal()" class="w-1/2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold py-2 rounded-lg">Cancelar</button>
+                    <button type="submit" id="btnSubmit" class="w-1/2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-2 rounded-lg shadow">Guardar Cámara</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://script.google.com/macros/s/AKfycbzLwGzwOCI78eu9wsCRus_Mquun-qqrolRD1pCcImEgCRUS4-TZD60DP8YXrnqK_atzVQ/exec';
+
+        // Cargar inmediatamente de localStorage para prevenir pérdida al presionar F5
+        let cameras = JSON.parse(localStorage.getItem('condor_cameras')) || [
+            { id: 1, nvr: 'NVR 01', canal: 'CH 01', nombre: 'Lobby Entrada Principal', ip: '192.168.1.101', puerto: '8000', ubicacion: 'Recepción', estado: 'Activa', observaciones: 'Visión nocturna OK' }
+        ];
+
+        let currentFilter = 'ALL';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderGrid();
+            syncData();
+
+            document.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                    e.preventDefault();
+                    document.getElementById('searchInput').focus();
+                }
+            });
+
+            document.getElementById('searchInput').addEventListener('input', renderGrid);
+        });
+
+        function saveToLocal() {
+            localStorage.setItem('condor_cameras', JSON.stringify(cameras));
+        }
+
+        async function syncData() {
+            if (!API_URL) return;
+            try {
+                const res = await fetch(API_URL);
+                const data = await res.json();
+                if (Array.isArray(data) && data.length > 0) {
+                    cameras = data.map((item, index) => ({
+                        id: item.id || index + 1,
+                        nvr: item.nvr || 'NVR 01',
+                        canal: item.canal || `CH ${index + 1}`,
+                        nombre: item.nombre || 'Cámara sin nombre',
+                        ip: item.ip || '0.0.0.0',
+                        puerto: item.puerto || '',
+                        ubicacion: item.ubicacion || 'Sin área',
+                        estado: item.estado || 'Activa',
+                        observaciones: item.observaciones || ''
+                    }));
+                    saveToLocal();
+                    renderGrid();
+                }
+            } catch (err) {
+                console.log('Modo local activo:', err);
+            }
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById('cameraGrid');
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            grid.innerHTML = '';
+
+            let filtered = cameras.filter(cam => {
+                const matchFilter = (currentFilter === 'ALL') || (cam.nvr === currentFilter);
+                const matchSearch = String(cam.ip).toLowerCase().includes(search) || 
+                                    String(cam.nombre).toLowerCase().includes(search) || 
+                                    String(cam.nvr).toLowerCase().includes(search) || 
+                                    String(cam.ubicacion).toLowerCase().includes(search);
+                return matchFilter && matchSearch;
+            });
+
+            document.getElementById('totalRegistered').textContent = cameras.length;
+            document.getElementById('freeChannels').textContent = 192 - cameras.length;
+
+            if (filtered.length === 0) {
+                document.getElementById('emptyMessage').classList.remove('hidden');
+                return;
+            } else {
+                document.getElementById('emptyMessage').classList.add('hidden');
+            }
+
+            filtered.forEach((cam) => {
+                const statusColor = cam.estado === 'Activa' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
+                                    cam.estado === 'Inactiva' ? 'bg-rose-500/20 text-rose-400 border-rose-500/30' : 
+                                    'bg-amber-500/20 text-amber-400 border-amber-500/30';
+
+                const realIndex = cameras.indexOf(cam);
+
+                const card = document.createElement('div');
+                card.className = "bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-xl flex flex-col justify-between gap-3 backdrop-blur hover:border-slate-600 transition";
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="flex items-center gap-1.5 mb-1">
+                                <span class="text-[10px] font-bold uppercase tracking-wider bg-slate-900 text-amber-400 px-2 py-0.5 rounded border border-slate-700">${cam.nvr}</span>
+                                <span class="text-[10px] font-mono bg-slate-700/50 text-slate-300 px-1.5 py-0.5 rounded">${cam.canal}</span>
+                            </div>
+                            <h3 class="font-bold text-sm text-white">${cam.nombre}</h3>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button onclick="editCamera(${realIndex})" class="text-[11px] bg-slate-700 hover:bg-amber-500 hover:text-slate-950 text-slate-300 px-2 py-0.5 rounded-lg border border-slate-600 transition font-semibold" title="Modificar">✏️</button>
+                            <span class="text-[10px] font-semibold px-2 py-1 rounded-full border ${statusColor}">${cam.estado}</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900/80 p-2 rounded-xl flex justify-between items-center border border-slate-800 font-mono text-xs">
+                        <span class="text-slate-400">IP / Puerto:</span>
+                        <span class="text-amber-300 font-bold">${cam.ip} ${cam.puerto ? ':' + cam.puerto : ''}</span>
+                    </div>
+
+                    <div class="text-xs text-slate-400 flex justify-between items-center pt-1 border-t border-slate-700/40">
+                        <span>📍 ${cam.ubicacion}</span>
+                        ${cam.observaciones ? `<span class="text-[10px] text-slate-500 italic max-w-[120px] truncate" title="${cam.observaciones}">${cam.observaciones}</span>` : ''}
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function filterNVR(nvr) {
+            currentFilter = nvr;
+            document.querySelectorAll('.nvr-filter').forEach(btn => {
+                btn.className = "nvr-filter bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 whitespace-nowrap";
+            });
+            event.target.className = "nvr-filter bg-amber-500 text-slate-950 font-bold px-3 py-1.5 rounded-lg border border-amber-400 whitespace-nowrap";
+            renderGrid();
+        }
+
+        function openPrintModal() {
+            document.getElementById('modalPrint').classList.remove('hidden');
+            updatePrintPreview();
+        }
+
+        function closePrintModal() {
+            document.getElementById('modalPrint').classList.add('hidden');
+        }
+
+        function updatePrintPreview() {
+            const selectedNVR = document.getElementById('selectPrintNVR').value;
+            const previewContainer = document.getElementById('modalTablePreview');
+            const printBody = document.getElementById('printTableBody');
+            
+            let list = cameras.filter(cam => selectedNVR === 'ALL' || cam.nvr === selectedNVR);
+
+            document.getElementById('printTotalCount').textContent = `${list.length} cámaras encontradas`;
+            document.getElementById('printHeaderSubtitle').textContent = selectedNVR === 'ALL' ? 'REPORTE GENERAL - TODOS LOS NVRS' : `REPORTE ESPECÍFICO - ${selectedNVR}`;
+            document.getElementById('printDate').textContent = new Date().toLocaleString('es-VE');
+
+            let tableHTML = `
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead>
+                        <tr class="border-b border-slate-700 text-amber-400">
+                            <th class="p-2">NVR / Canal</th>
+                            <th class="p-2">Cámara</th>
+                            <th class="p-2 font-mono">Dirección IP</th>
+                            <th class="p-2">Ubicación</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800 text-slate-300">
+            `;
+
+            let printRowsHTML = '';
+
+            list.forEach(cam => {
+                tableHTML += `
+                    <tr>
+                        <td class="p-2 font-bold text-amber-400/90">${cam.nvr} <span class="text-[10px] text-slate-400">(${cam.canal})</span></td>
+                        <td class="p-2 font-semibold text-white">${cam.nombre}</td>
+                        <td class="p-2 font-mono text-amber-300">${cam.ip} ${cam.puerto ? ':' + cam.puerto : ''}</td>
+                        <td class="p-2 text-slate-400">${cam.ubicacion}</td>
+                    </tr>
+                `;
+
+                printRowsHTML += `
+                    <tr>
+                        <td style="border: 1px solid #cbd5e1; padding: 6px; font-weight: bold;">${cam.nvr} (${cam.canal})</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 6px;">${cam.nombre}</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 6px; font-family: monospace; font-weight: bold;">${cam.ip} ${cam.puerto ? ':' + cam.puerto : ''}</td>
+                        <td style="border: 1px solid #cbd5e1; padding: 6px;">${cam.ubicacion}</td>
+                    </tr>
+                `;
+            });
+
+            tableHTML += `</tbody></table>`;
+            previewContainer.innerHTML = tableHTML;
+            printBody.innerHTML = printRowsHTML;
+        }
+
+        function executePrint() { window.print(); }
+
+        function openModalForAdd() {
+            document.getElementById('editIndex').value = "-1";
+            document.getElementById('modalTitle').textContent = "📹 Registrar Nueva Cámara";
+            document.getElementById('addCameraForm').reset();
+            document.getElementById('modalAdd').classList.remove('hidden');
+        }
+
+        function editCamera(index) {
+            const cam = cameras[index];
+            document.getElementById('editIndex').value = index;
+            document.getElementById('modalTitle').textContent = "✏️ Modificar Cámara";
+            document.getElementById('inputNVR').value = cam.nvr || 'NVR 01';
+            document.getElementById('inputCanal').value = cam.canal || '';
+            document.getElementById('inputPuerto').value = cam.puerto || '';
+            document.getElementById('inputIP').value = cam.ip || '';
+            document.getElementById('inputNombre').value = cam.nombre || '';
+            document.getElementById('inputUbicacion').value = cam.ubicacion || '';
+            document.getElementById('inputEstado').value = cam.estado || 'Activa';
+            document.getElementById('inputObs').value = cam.observaciones || '';
+            document.getElementById('modalAdd').classList.remove('hidden');
+        }
+
+        function closeModal() { document.getElementById('modalAdd').classList.add('hidden'); }
+
+        async function saveCamera(e) {
+            e.preventDefault();
+            const btnSubmit = document.getElementById('btnSubmit');
+            btnSubmit.disabled = true;
+            btnSubmit.textContent = "Guardando...";
+
+            const editIdx = parseInt(document.getElementById('editIndex').value);
+
+            const camData = {
+                id: editIdx >= 0 ? cameras[editIdx].id : cameras.length + 1,
+                nvr: document.getElementById('inputNVR').value,
+                canal: document.getElementById('inputCanal').value,
+                puerto: document.getElementById('inputPuerto').value,
+                nombre: document.getElementById('inputNombre').value,
+                ip: document.getElementById('inputIP').value,
+                ubicacion: document.getElementById('inputUbicacion').value,
+                estado: document.getElementById('inputEstado').value,
+                observaciones: document.getElementById('inputObs').value
+            };
+
+            if (editIdx >= 0) {
+                cameras[editIdx] = camData;
+            } else {
+                cameras.push(camData);
+            }
+
+            saveToLocal();
+            renderGrid();
+            closeModal();
+
+            const formData = new URLSearchParams();
+            for (const key in camData) {
+                formData.append(key, camData[key]);
+            }
+
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData.toString()
+                });
+            } catch (err) {
+                console.log('Error enviando a la nube:', err);
+            } finally {
+                btnSubmit.disabled = false;
+                btnSubmit.textContent = "Guardar Cámara";
+            }
+        }
+    </script>
+</body>
+</html>
